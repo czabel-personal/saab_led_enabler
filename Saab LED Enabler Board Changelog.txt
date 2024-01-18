@@ -1,0 +1,5 @@
+Revision 5
+Date: 11 January, 2024
+Author: Calhoun Zabel
+Notable Changes:
+	* Added 12 to 5V linear regulator to schematic to power ESP32 board

@@ -1,0 +1,9 @@
+Future Improvements:
+	* Add webserver to display tracked LED runtime
+	* Add tracking of LED runtime
+
+Version 0.50
+Date: 11 January, 2024
+Author: Calhoun Zabel
+Notable Changes:
+	* Split to dual-core architecture to allow slow LED blinking without impacting ADC reading
