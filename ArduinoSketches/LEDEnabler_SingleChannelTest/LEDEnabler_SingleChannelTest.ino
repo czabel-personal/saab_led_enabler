@@ -1,5 +1,8 @@
 #include <Wire.h>
-#include <Wifi.h>
+#include <WiFi.h>
+#include <WebServer.h>
+
+#include "index.h"
 
 const int VER = 0.60;
 
@@ -11,7 +14,7 @@ bool DEBUG = true;            // Used to enable verbose serial logging, to aid i
 
 const char* ssid = "Saab_LED_Enabler";
 const char* password = "helloworld";
-WiFiServer server(80);        // Port 80 for HTTP is standard
+WebServer server(80);        // Port 80 for HTTP is standard
 String header;                // Variable to store the HTTP request (should change this to not use String class)
 
 bool errorDisplay = true;     // Whether or not the LED is used to display any errors
@@ -35,22 +38,7 @@ const int PWR_TARGET[11] = {21, 21, 15, 21, 21, 21, 21, 5, 5, 5, 5}; // Target W
 
 const byte adcAddr = 0b0110101;
 
-// Set up csel bits for reading all channels of ADC
-const byte ch0 = 0b00000000;
-const byte ch1 = 0b00000010;
-const byte ch2 = 0b00000100;
-const byte ch3 = 0b00000110;
-const byte ch4 = 0b00001000;
-const byte ch5 = 0b00001010;
-const byte ch6 = 0b00001100;
-const byte ch7 = 0b00001110;
-const byte ch8 = 0b00010000;
-const byte ch9 = 0b00010010;
-const byte ch10 = 0b00010100;
-
-const byte chArray[] = {ch0, ch1, ch2, ch3, ch4, ch5, ch6, ch7, ch8, ch9, ch10}; 
-
-// TwoWire I2CADC = TwoWire(0);
+// #####################################
 
 void setup() {
 
@@ -68,10 +56,15 @@ void setup() {
 
   WiFi.softAP(ssid, password);
   IPAddress IP = WiFi.softAPIP();
+  Serial.println(F("AP Started, SSID: Saab_LED_Enabler"));
   server.begin();
   Serial.println(F("Webserver initialized."));
   Serial.print(F("Server IP: "));
   Serial.println(IP);
+
+  server.on("/", handleIndex);      // Display index page
+  server.on("/readStatuses", handleStatus);   // For returning bulb status
+  // server.on("/readRuntimes", handleRuntimes); // For returning cumulative runtimes
 
   Wire.begin();
   Serial.println(F("I2C initialized."));
@@ -81,6 +74,22 @@ void setup() {
   xTaskCreatePinnedToCore(Task3_Webserver, "Webserver Controls", 10000, NULL, 1, &WebserverTask, 1);
 
   Serial.println(F("setup() completed."));
+  
+}
+
+void handleIndex() {
+  String s = INDEX_page;                // Read HTML
+  server.send(200, "text/html", s);     // Send webpage to client
+}
+
+void handleStatus() {
+  char pretendJson[30];
+  sprintf(pretendJson, "%d_%d_%d_%d_%d_%d_%d_%d_%d_%d_%d", pwmStatus[0], pwmStatus[1], pwmStatus[2], pwmStatus[3], pwmStatus[4], pwmStatus[5], pwmStatus[6], pwmStatus[7], pwmStatus[8], pwmStatus[9], pwmStatus[10]);
+  
+  String statusString;
+  statusString = pretendJson;
+
+  server.send(200, "text/plain", statusString);
   
 }
 
@@ -159,6 +168,8 @@ void Task2_Status(void * pvParameters) {
 } // End Task2_Error()
 
 void Task3_Webserver(void * pvParameters) {
+  server.handleClient();
+  delay(1);
 
 } // End Task3_Webserver()
 

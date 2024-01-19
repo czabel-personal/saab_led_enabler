@@ -1,6 +1,17 @@
 Future Improvements:
-	* Add webserver to display tracked LED runtime
+	* Add Configuration page to web server
+	* Add error message functionality when refreshing runtimes
+	* Add functionality to rename bulbs
+	* Add functionality to reset LED runtime
 	* Add tracking of LED runtime
+
+Version 0.60
+Date 18 January, 2024
+Author: Calhoun Zabel
+Notable Changes:
+	* Rudimentary soft AP webserver implemented, untested
+	* Only index page and static values currently
+
 
 Version 0.50
 Date: 11 January, 2024
