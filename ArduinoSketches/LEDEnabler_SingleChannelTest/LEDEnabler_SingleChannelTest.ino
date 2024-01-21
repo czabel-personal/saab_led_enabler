@@ -1,18 +1,12 @@
 #include <Wire.h>
-#include <Wifi.h>
 
-const int VER = 0.60;
+const int VER = 0.70;
 
 TaskHandle_t MainTask;
 TaskHandle_t StatusTask;
 TaskHandle_t WebserverTask;
 
 bool DEBUG = true;            // Used to enable verbose serial logging, to aid in debugging
-
-const char* ssid = "Saab_LED_Enabler";
-const char* password = "helloworld";
-WiFiServer server(80);        // Port 80 for HTTP is standard
-String header;                // Variable to store the HTTP request (should change this to not use String class)
 
 bool errorDisplay = true;     // Whether or not the LED is used to display any errors
 const int errorLEDpin = 2;    // GPIO 2 is the onboard LED
@@ -66,19 +60,11 @@ void setup() {
   }
   Serial.println(F("PWM channels initialized"));
 
-  WiFi.softAP(ssid, password);
-  IPAddress IP = WiFi.softAPIP();
-  server.begin();
-  Serial.println(F("Webserver initialized."));
-  Serial.print(F("Server IP: "));
-  Serial.println(IP);
-
   Wire.begin();
   Serial.println(F("I2C initialized."));
 
   xTaskCreatePinnedToCore(Task1_Main, "Main Loop", 10000, NULL, 1, &MainTask, 0);
   xTaskCreatePinnedToCore(Task2_Status, "Status Blinker", 10000, NULL, 1, &StatusTask, 1);
-  xTaskCreatePinnedToCore(Task3_Webserver, "Webserver Controls", 10000, NULL, 1, &WebserverTask, 1);
 
   Serial.println(F("setup() completed."));
   
@@ -158,13 +144,11 @@ void Task2_Status(void * pvParameters) {
   
 } // End Task2_Error()
 
-void Task3_Webserver(void * pvParameters) {
-
-} // End Task3_Webserver()
 
 void loop() {
 
 }
+
 
 bool scanRead(int channelData[]) {
   bool status = false; // Flag to keep track of I2C communication status

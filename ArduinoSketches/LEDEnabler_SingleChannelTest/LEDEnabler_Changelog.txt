@@ -1,6 +1,11 @@
 Future Improvements:
-	* Add webserver to display tracked LED runtime
-	* Add tracking of LED runtime
+
+Version 0.70
+Date: 20 January, 2024
+Author: Calhoun Zabel
+Notable Changes:
+	* Reverted from webserver attempt - too much to mess with on an ancient library
+	* Will be using LED blinking to signify errors, if any
 
 Version 0.50
 Date: 11 January, 2024
