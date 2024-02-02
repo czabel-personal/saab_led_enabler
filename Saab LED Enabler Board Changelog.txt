@@ -1,4 +1,13 @@
-Revision 5
+Version 0.80
+Date: 1 February, 2024
+Author: Calhoun Zabel
+Notable Changes:
+	* Added decoupling cap for MAX11611
+	* Added reference output passives to schematic
+	* Code updated to include a new configuration mode and functionality
+	* Setup byte now sent to configure MAX11611 in setup() function
+
+Version 0.70
 Date: 11 January, 2024
 Author: Calhoun Zabel
 Notable Changes:

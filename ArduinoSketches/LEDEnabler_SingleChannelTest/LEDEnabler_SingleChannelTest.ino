@@ -7,6 +7,7 @@ TaskHandle_t StatusTask;
 TaskHandle_t WebserverTask;
 
 bool DEBUG = true;            // Used to enable verbose serial logging, to aid in debugging
+bool CALIBRATION = true;      // Used to change behavior of main loop, to understand ADC values for given voltages
 
 bool errorDisplay = true;     // Whether or not the LED is used to display any errors
 const int errorLEDpin = 2;    // GPIO 2 is the onboard LED
@@ -61,7 +62,11 @@ void setup() {
   Serial.println(F("PWM channels initialized"));
 
   Wire.begin();
-  Serial.println(F("I2C initialized."));
+  Serial.println(F("I2C initialized, attempting to configure ADC..."));
+  Wire.beginTransmission(adcAddr);
+  Wire.write(0b11110010);   //Register, Sel2, Sel1, Sel0, Clk, Bip/Uni, Reset, DC
+  // Setup byte, Internal reference, ref output, internal ref on, nternal clock, unipolar, no reset, don't care 
+  Wire.endTransmission();
 
   xTaskCreatePinnedToCore(Task1_Main, "Main Loop", 10000, NULL, 1, &MainTask, 0);
   xTaskCreatePinnedToCore(Task2_Status, "Status Blinker", 10000, NULL, 1, &StatusTask, 1);
@@ -74,8 +79,30 @@ void Task1_Main(void * pvParameters) {
   for (;;) {
     int values[11];
 
-    Serial.println("Attempting to read from I2C...");
-    bool i2cReadStatus = scanRead(values); // Pass array into function
+    if (CALIBRATION) {
+      Serial.println("Reading ADC value via I2C in 5 seconds");
+      delay(5000);
+    }
+
+    Serial.println("Attempting to read ADC value via I2C...");
+    bool i2cReadStatus = scanRead(adcAddr, values); // Pass array into function
+
+    if (CALIBRATION) {
+      int indexToCal = 5;
+      if (!i2cReadStatus) {
+        errorType = 1; // Update error flag to error function to flash the code
+        Serial.println("I2C Error, doing nothing.");
+      } else {
+        for (int calChannel = 0; calChannel < 11; calChannel++) {
+          Serial.print("Current value of channel ");
+          Serial.print(calChannel);
+          Serial.print(": ");
+          Serial.println(values[indexToCal]);
+        }
+      }
+    } else { // Normal program goes here
+
+    }
 
     if (!i2cReadStatus) {
       errorType = 1; // Update error flag to error function to flash the code
@@ -150,11 +177,11 @@ void loop() {
 }
 
 
-bool scanRead(int channelData[]) {
+bool scanRead(byte i2cAddress, int channelData[]) {
   bool status = false; // Flag to keep track of I2C communication status
   byte i2cData[22];
 
-  int returnBytes = Wire.requestFrom(adcAddr, 22);
+  int returnBytes = Wire.requestFrom(i2cAddress, 22);
   if (returnBytes > 0) {
     status = true; // Got data, can continue
     Serial.println("Some data exists, starting read...");
