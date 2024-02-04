@@ -1,5 +1,12 @@
 Future Improvements:
 
+Version 0.71
+Date: 3 February, 2024
+Author: Calhoun Zabel
+Notable Changes:
+	* Renamed to more accurate name
+	* Properly arranged calibration if/else block
+
 Version 0.70
 Date: 20 January, 2024
 Author: Calhoun Zabel
