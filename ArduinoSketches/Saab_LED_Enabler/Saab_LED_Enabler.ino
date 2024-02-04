@@ -1,6 +1,6 @@
 #include <Wire.h>
 
-const int VER = 0.70;
+const int VER = 0.71;
 
 TaskHandle_t MainTask;
 TaskHandle_t StatusTask;
@@ -63,7 +63,7 @@ void setup() {
 
   Wire.begin();
   Serial.println(F("I2C initialized, attempting to configure ADC..."));
-  Wire.beginTransmission(adcAddr);
+  Wire.beginTransmission(adcAddr); 
   Wire.write(0b11110010);   //Register, Sel2, Sel1, Sel0, Clk, Bip/Uni, Reset, DC
   // Setup byte, Internal reference, ref output, internal ref on, nternal clock, unipolar, no reset, don't care 
   Wire.endTransmission();
@@ -101,48 +101,46 @@ void Task1_Main(void * pvParameters) {
         }
       }
     } else { // Normal program goes here
+      if (!i2cReadStatus) {
+        errorType = 1; // Update error flag to error function to flash the code
+        Serial.println("I2C Error, doing nothing.");
 
-    }
+      } else { // Otherwise, continue 
+        int currentIndex = 5;
+        int channelDutyCycle = 127;
 
-    if (!i2cReadStatus) {
-      errorType = 1; // Update error flag to error function to flash the code
-      Serial.println("I2C Error, doing nothing.");
+        // For now, we're only paying attention to a single channel, to prove the concept.
+        // Left Turn 
+        if (values[currentIndex] > BULB_VOLTAGE_THRESH) {
+          if (DEBUG) {
+            Serial.println("Left Turn signal is on");
+          }
+          if (pwmStatus[currentIndex] == 0) { // If PWM is not on, meaning the light just turned on
 
-    } else { // Otherwise, continue 
-      int currentIndex = 5;
-      int channelDutyCycle = 127;
+            // Turn on PWM
+            ledcWrite(currentIndex, channelDutyCycle);
 
-      // For now, we're only paying attention to a single channel, to prove the concept.
-      // Left Turn 
-      if (values[currentIndex] > BULB_VOLTAGE_THRESH) {
-        if (DEBUG) {
-          Serial.println("Left Turn signal is on");
+            pwmStatus[currentIndex] = 1;      // Mark that it's enabled
+          }
+          else { // PWM was already on, we're just going to tweak the PWM duty cycle to try and nail the power
+            channelDutyCycle = calcDutyCycle(currentIndex, values);
+
+          }
+        } else if (values[currentIndex] <= BULB_VOLTAGE_THRESH) { // Bulb is now off
+          if (DEBUG) {
+            Serial.println("Left Turn signal is now off");
+          }
+          if (pwmStatus[currentIndex] == 0) { // PWM is off currently
+            // We're good, nothing required here
+          } else {
+            ledcWrite(currentIndex, 0);       // Set duty cycle to 0, turning PWM off
+
+            pwmStatus[currentIndex] = 0;      // Mark that it's off
+          }
+
         }
-        if (pwmStatus[currentIndex] == 0) { // If PWM is not on, meaning the light just turned on
-
-          // Turn on PWM
-          ledcWrite(currentIndex, channelDutyCycle);
-
-          pwmStatus[currentIndex] = 1;      // Mark that it's enabled
-        }
-        else { // PWM was already on, we're just going to tweak the PWM duty cycle to try and nail the power
-          channelDutyCycle = calcDutyCycle(currentIndex, values);
-
-        }
-      } else if (values[currentIndex] <= BULB_VOLTAGE_THRESH) { // Bulb is now off
-        if (DEBUG) {
-          Serial.println("Left Turn signal is now off");
-        }
-        if (pwmStatus[currentIndex] == 0) { // PWM is off currently
-          // We're good, nothing required here
-        } else {
-          ledcWrite(currentIndex, 0);       // Set duty cycle to 0, turning PWM off
-
-          pwmStatus[currentIndex] = 0;      // Mark that it's off
-        }
-
-      }
-    }
+      } // End if(i2cError)/else block
+    } // End if(CALIBRATION)/else block
 
   } // End for(;;)
   
